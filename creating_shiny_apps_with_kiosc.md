@@ -1,12 +1,14 @@
+# Developing apps for Kiosc / SODAR
+
 To develop an app for visualisation of the data from SODAR via KIOSC, you
 need the following elements:
 
-
 1) an app that does something – e.g. a shiny app
 2) a docker image (containing the app) uploaded to the CUBI github page
-3) a way for the image container to access the SODAR data (using anonymous
+3) a way for the image container to access the
+[SODAR](https://sodar.bihealth.org) data (using anonymous
 tickets / tokens)
-4) a configuration in KIOSC which actually stores the site-specific URLs
+4) a configuration in [KIOSC](https://kiosc.bihealth.org) which actually stores the site-specific URLs
 and tokens
 
 In the following, I will describe the creation of the pipeline browser app.
@@ -16,7 +18,7 @@ We start by creating a build directory for the docker images (called
 
 ## The pipeline browser shiny app
 
-The sea-snap pipeline can be easily visualised using the
+The results of a sea-snap pipeline can be easily visualised using the
 `pipeline_browser()` function from the `Rseasnap` package. This function
 defines the UI and the server of a shiny app and returns a shiny object,
 which is what we need for our app. The following code starts the app:
@@ -31,8 +33,8 @@ pipeline_browser(pip)
 This will be the contents of the `app.R`, with one modification. Sometimes
 it is convenient to have different names for the pipeline config file, so
 we might want to specify it as a run parameter for the container image.
-This parameters are passed on to apps within the container via
-environmental variables, and we can look them app from within R:
+These parameters are passed on to apps within the container via
+environmental variables, and we can look them up from within R:
 
 ```
 library(Rseasnap)
@@ -55,7 +57,7 @@ runApp("app.R", launch.browser = FALSE, port = 8080, host = "0.0.0.0")
 ```
 
 It is convenient to separate launching the app and the app itself. The
-above code does not launch a browser (which would not work in a container)
+above code tells shiny not to launch a browser (which would not work in a container)
 and specifies that the app should listen to port 8080 on localhost.
 However, having the app in a separate file allows us to launch the app from
 outside of the container to check that it is working.
@@ -64,15 +66,17 @@ If you look into the `build/` directory, you will see that `app.R` is
 actually a symbolic link to `build/pipeline_browser.R`. This is because I
 was using another shiny app, stored in `build/check_vars.R` which shows
 (from within R) which environmental variables have been defined. By
-switching the symbolic link between the two files allowed me to debug the
-issues with the pipeline.
+switching the symbolic link between the two files I could debug the
+issues with the pipeline when run from Kiosc.
 
 ## Shell startup script
 
 Before we launch the app using `app_run.R`, we need to pull the data from
-SODAR. This happens later when the docker container is started. The startup
-shell scripts contains the commands to download the data (as a .tar.gz
-file), unpack it, and launch the shiny app.
+SODAR. This happens not when the docker image is build, but later, when the
+docker container is started (that way the image does not contain any
+private data and at each start the newest version of the pipeline is
+downloaded). The startup shell scripts contains the commands to download
+the data (as a .tar.gz file), unpack it, and launch the shiny app.
 
 Here is the file `build/app_run.sh`. This is the file that the docker
 container will actually run.
@@ -106,10 +110,10 @@ put it all in the docker image.
 ## Creating the docker image
 
 The docker image must contain all the software required to run our app and
-also to access the data on SODAR. As a base for my image, I used the
+also to access the data on SODAR. As the base for my image, I used the
 bioconductor image containing a recent version of Bioconductor (because we
-need DESeq2, and DESeq2 needs Bioconductor) and of R (4.1). Here is the
-file `build/Dockerfile`, and I will discuss its elements below.
+need DESeq2, and DESeq2 needs Bioconductor) and of R (4.1). Below are the
+lines of the [Dockerfile](build/Dockerfile) explained:
 
 ```
 ## Based on Bioconductor image, with R 4.1
@@ -172,6 +176,9 @@ the docker image starts. This is our shell script from above, run by
 CMD ["/bin/bash", "app_run.sh" ]
 ```
 
+(We do not use `ENTRYPOINT` here, because that way the command can be
+overriden by a Kiosc parameter, but we could).
+
 ## Building and testing the image
 
 First, build the docker image with
@@ -186,8 +193,8 @@ the second `build` is the name of the directory containing the
 `docker build -t ghcr.io/bihealth/pipeline-browser:v4.`).
 
 Note that at this point we already define the name of the image and its
-location. I will store the docker image on github container repository
-(`ghcr.io`), bihealth account. 
+location. It will store the docker image on github container repository
+(`ghcr.io`), bihealth account.
 
 It takes a lot of time to build it for the first time: docker needs to pull
 the bioconductor image, install all the requirements etc. However, when you
@@ -203,7 +210,7 @@ docker run -P ghcr.io/bihealth/pipeline-browser:v4
 (`-d` option is for detached mode, `-P` is for exposing the ports).
 
 This will not work, however, because the scripts we created require
-environmental variables. Here is the output:
+parameters stored as environmental variables. Here is the output:
 
 ```
 Launching
@@ -242,14 +249,14 @@ docker run -e DE_CONFIG="DE_config.yaml" \
 
 (Use the actual token / ticket instead of the "XXXX" above).
 
-Note that the davrods server is not the same as used when clicked on the
+Note that the davrods server is not the same as the one used when clicked on the
 WebDAV links in SODAR – it is specifically for serving the data anonymously
 with the help of tokens (tickets as they are called in the IRODS lingo).
 
 Also note that presently only landing zones and your home directories can
-be exposed from SODAR. So the file must be either in your home or in an LZ.
+be exposed from SODAR. Therefore, the file must be either in your home or in an LZ.
 
-This now takes several minutes, because the container actually downloads
+This now takes several minutes, because the container needs to download
 the file from SODAR and unpack it before launching the app. At the end we
 have output that looks like this:
 
@@ -264,7 +271,7 @@ Loading required package: shiny
 preparing...
  * Loading Annotation (consider using the annot option to speed this up)
  * Loading contrasts (consider using the cntr option to speed this up)
-[...]
+[...boring stuff about packages being loaded...]
  * Loading tmod results (consider using the tmod_res option to speed this up)
  * Loading tmod_dbs (consider using the tmod_rdbses option to speed this up)
 
@@ -281,7 +288,7 @@ CONTAINER ID   IMAGE                                  COMMAND                  C
 c7a7ae127197   ghcr.io/bihealth/pipeline-browser:v4   "/bin/bash app_run.sh"   4 minutes ago   Up 4 minutes   0.0.0.0:49190->8080/tcp, :::49190->8080/tcp, 0.0.0.0:49189->8787/tcp, :::49189->8787/tcp   silly_newton
 ```
 
-If you open now the URL `0.0.0.0:49190` in the browser, you should get to
+If you open now the URL `0.0.0.0:49190` in your browser, you should get to
 see the app. Hurra! The image works.
 
 
