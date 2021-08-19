@@ -184,13 +184,13 @@ overriden by a Kiosc parameter, but we could).
 First, build the docker image with
 
 ```
-docker build -t ghcr.io/bihealth/pipeline-browser:v4 build
+docker build -t ghcr.io/bihealth/pipeline-browser:v5 build
 ```
 
 Yeah, it's confusing: the first `build` is the build command of docker and
 the second `build` is the name of the directory containing the
 `Dockerfile`. (You can also enter the `build` directory and run 
-`docker build -t ghcr.io/bihealth/pipeline-browser:v4.`).
+`docker build -t ghcr.io/bihealth/pipeline-browser:v5.`).
 
 Note that at this point we already define the name of the image and its
 location. It will store the docker image on github container repository
@@ -204,7 +204,7 @@ to be repeated (thanks to the docker cache mechanism and docker layers).
 Once the image is build, you can run it with 
 
 ```
-docker run -P ghcr.io/bihealth/pipeline-browser:v4
+docker run -P ghcr.io/bihealth/pipeline-browser:v5
 ```
 
 (`-d` option is for detached mode, `-P` is for exposing the ports).
@@ -244,7 +244,8 @@ docker run -e DE_CONFIG="DE_config.yaml" \
            -e IRODS_FILE="DE_pipeline.tar.gz"\
            -e DAVRODS_SERVER="davrods-anonymous.sodar.cubi.bihealth.org"\
            -e IRODS_TOKEN="XXXX"\
-           -P ghcr.io/bihealth/pipeline-browser:v4
+           -e TITLE="Example title"\
+           -P ghcr.io/bihealth/pipeline-browser:v5
 ```
 
 (Use the actual token / ticket instead of the "XXXX" above).
@@ -285,7 +286,7 @@ machine. We can check it by running `docker ps`:
 
 ```
 CONTAINER ID   IMAGE                                  COMMAND                  CREATED         STATUS         PORTS                                                                                      NAMES
-c7a7ae127197   ghcr.io/bihealth/pipeline-browser:v4   "/bin/bash app_run.sh"   4 minutes ago   Up 4 minutes   0.0.0.0:49190->8080/tcp, :::49190->8080/tcp, 0.0.0.0:49189->8787/tcp, :::49189->8787/tcp   silly_newton
+c7a7ae127197   ghcr.io/bihealth/pipeline-browser:v5   "/bin/bash app_run.sh"   4 minutes ago   Up 4 minutes   0.0.0.0:49190->8080/tcp, :::49190->8080/tcp, 0.0.0.0:49189->8787/tcp, :::49189->8787/tcp   silly_newton
 ```
 
 If you open now the URL `0.0.0.0:49190` in your browser, you should get to
@@ -316,7 +317,7 @@ Use your github username and, as password, your newly created token.
 Next, upload the image to github by simply writing
 
 ```
-docker push ghcr.io/bihealth/pipeline-browser:v4
+docker push ghcr.io/bihealth/pipeline-browser:v5
 ```
 
 One last thing we need to do is to make this image publicly available,

@@ -43,7 +43,7 @@ To use it, do the following:
 
 
  7. Under "repository", enter `ghcr.io/bihealth/pipeline_browser`. Under
-    "Tag", enter `v4` (current version of the container). Under `Container
+    "Tag", enter `v5` (current version of the container). Under `Container
     port`, enter `8080` (the port at which container exposes the pipeline
     browser). **Note**: it happened to me more than once that I have
     inadvertently changed the port number by using the laptop touchpad.
@@ -62,7 +62,8 @@ To use it, do the following:
            "DAVRODS_SERVER":"davrods-anonymous.sodar.cubi.bihealth.org",
            "IRODS_FILE":"DE_pipeline.tar.gz",
            "IRODS_TOKEN":"XXX",
-           "DE_CONFIG":"DE_config.yaml"
+           "DE_CONFIG":"DE_config.yaml",
+           "TITLE":"Sea-snap example project"
          }
          
  9. Enter `IRODS_TOKEN` under "Environment secret keys" such that the token cannot
