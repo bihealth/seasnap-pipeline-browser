@@ -14,7 +14,7 @@ COPY . /usr/local/src/app
 #set working directory to the app
 WORKDIR /usr/local/src/app
 
-RUN R -e "install.packages('Rseasnap_0.2.0.tar.gz')"
+RUN R -e "install.packages('Rseasnap_0.2.1.tar.gz')"
 
 #set the unix commands to run the app
 CMD ["/bin/bash", "app_run.sh" ]
