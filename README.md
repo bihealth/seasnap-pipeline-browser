@@ -43,7 +43,7 @@ To use it, do the following:
 
 
  7. Under "repository", enter `ghcr.io/bihealth/pipeline_browser`. Under
-    "Tag", enter `v5` (current version of the container). Under `Container
+    "Tag", enter `v6` (current version of the container). Under `Container
     port`, enter `8080` (the port at which container exposes the pipeline
     browser). **Note**: it happened to me more than once that I have
     inadvertently changed the port number by using the laptop touchpad.
