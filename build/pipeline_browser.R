@@ -1,6 +1,9 @@
 library(Rseasnap)
 library(RJSONIO)
 library(curl)
+library(shinyBS)
+options(spinner.type=6)
+options(spinner.color="#47336F")
 
 
 title <- Sys.getenv("TITLE")

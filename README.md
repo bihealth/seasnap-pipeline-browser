@@ -42,13 +42,13 @@ To use it, do the following:
     describe how you should fill out the "Create container" form.
 
 
- 7. Under "repository", enter `ghcr.io/bihealth/pipeline_browser`. Under
-    "Tag", enter `v6` (current version of the container). Under `Container
+ 7. Under "repository", enter `ghcr.io/bihealth/seapiper`. Under
+    "Tag", enter `v0.2.9` (current version of the container). Under `Container
     port`, enter `8080` (the port at which container exposes the pipeline
     browser). **Note**: it happened to me more than once that I have
     inadvertently changed the port number by using the laptop touchpad.
-    This results in a "server error", so please make sure that the port
-    number is correct!
+    This results in a "server error" without any sensible error message, so
+    make sure that the port number is correct!
 
  8. Now you need to configure the variables under "Environment". This entry
     is in JSON format and *must* include the information for the container
@@ -58,13 +58,22 @@ To use it, do the following:
 
          
          {
+           "datasets":[
+            {
+              "name":"Example data set",
+              "archive":"DE_pipeline.tar.gz",
+              "config":"DE_config.yaml"
+            }
+           ],
            "IRODS_PATH":"/sodarZone/projects/1e/1e526322-50b8-47dd-a419-759d03d19a0b/landing_zones/weinerj@CHARITE/seasnap_test_data/monocytes/20210812_165144",
            "DAVRODS_SERVER":"davrods-anonymous.sodar.cubi.bihealth.org",
-           "IRODS_FILE":"DE_pipeline.tar.gz",
            "IRODS_TOKEN":"XXX",
-           "DE_CONFIG":"DE_config.yaml",
            "TITLE":"Sea-snap example project"
          }
+
+    The "datasets" entry in the JSON format above allows you to define
+    multiple archives (workflow results) which you can than view with a
+    single interface.
          
  9. Enter `IRODS_TOKEN` under "Environment secret keys" such that the token cannot
     be viewed by other users of the Kiosc site. When you edit the container
