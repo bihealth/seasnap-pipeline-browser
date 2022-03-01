@@ -4,7 +4,7 @@ FROM bioconductor/bioconductor_docker:latest
 
 ##install necessary libraries
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive  apt-get -qq install libxml2-dev wget libcurl4-openssl-dev libssl-dev 
-RUN R -e "install.packages(c('shinyjs', 'curl', 'tmod', 'colorDF', 'lubridate', 'plotly', 'DT', 'cowplot', 'bslib', 'thematic', \
+RUN R -e "install.packages(c('shinyjs', 'curl', 'colorDF', 'lubridate', 'plotly', 'DT', 'cowplot', 'bslib', 'thematic', \
                           'ggrepel', 'shinydashboard', 'shinyBS', 'shinycssloaders', 'RJSONIO', 'waiter', 'remotes'))"
 RUN R -e "BiocManager::install('DESeq2')"
 
@@ -23,7 +23,7 @@ WORKDIR /usr/local/src/app
 ## change ARG VERSION on command line to enforce reinstalling the seapiper et co
 ## docker build --build-arg VERSION=0.1.1 ...
 ARG VERSION=unknown
-RUN R -e "remotes::install_github('bihealth/Rseasnap', upgrade='never');remotes::install_github('bihealth/bioshmods', upgrade='never');remotes::install_github('bihealth/seaPiper', upgrade='never')"
+RUN R -e "remotes::install_github( 'january3/tmod', upgrade='never');remotes::install_github( 'bihealth/Rseasnap', upgrade='never');remotes::install_github('bihealth/bioshmods@memopt', upgrade='never');remotes::install_github('bihealth/seaPiper', upgrade='never')"
 
 #set the unix commands to run the app
 CMD ["/usr/local/bin/Rscript", "app.R" ]
