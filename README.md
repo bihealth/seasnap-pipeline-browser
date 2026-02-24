@@ -73,10 +73,29 @@ Optional:
   {
     "name": "Example data set",
     "archive": "DE_pipeline.tar.gz",
-    "config": "DE_config.yaml"
+    "config": "DE_config.yaml",
+    "format": "rseasnap"
+  },
+  {
+    "name": "Example custom data set",
+    "archive": "custom_input.tar.gz",
+    "config": "seapiper_data.yaml",
+    "format": "custom"
   }
 ]
 ```
+
+`datasets` entry fields:
+
+- `name`: dataset label used in logs and as default dataset ID source
+- `archive`: tar.gz file to download from iRODS
+- `config`: path inside extracted archive
+  - for `format: "rseasnap"`: DE pipeline config YAML loaded via `load_de_pipeline()`
+  - for `format: "custom"`: seaPiper data YAML loaded via `seapiperdata_from_yaml()`
+- `format` (optional): one of `rseasnap` or `custom`; default is `rseasnap`
+
+When mixing multiple dataset entries, dataset IDs inside merged seaPiper data
+must stay unique. Duplicate IDs will stop app startup with an explicit error.
 
 ## KIOSC deployment checklist
 
