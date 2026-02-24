@@ -30,6 +30,16 @@ Override image or tag:
 IMAGE=ghcr.io/bihealth/seapiper TAG=0.6.0 bash build.sh
 ```
 
+`build.sh` also accepts pinned dependency refs:
+
+- `TMOD_REF`
+- `RSEASNAP_REF`
+- `BIOSHMODS_REF`
+- `SEAPIPER_REF`
+- `GGHALVES_REF`
+
+These are passed as Docker build args and default to pinned commit SHAs.
+
 ## Run image locally
 
 1. Copy `env.example` to `.env` and fill in your values.

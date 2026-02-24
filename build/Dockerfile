@@ -1,29 +1,57 @@
 ## Build: docker build --build-arg VERSION=0.6.0 -t ghcr.io/bihealth/seapiper:0.6.0 build
-## Based on Bioconductor image, with R 4.1
-FROM bioconductor/bioconductor_docker:latest
+## Pinned Bioconductor image digest for reproducibility.
+FROM bioconductor/bioconductor_docker@sha256:d274974ec781ce48642f8cb804b0da66b475f221d3587d7cd4d29542fbb29404
 
-##install necessary libraries
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive  apt-get -qq install libxml2-dev wget libcurl4-openssl-dev libssl-dev 
-RUN R -e "install.packages(c('markdown', 'shinyjs', 'curl', 'colorDF', 'lubridate', 'plotly', 'DT', 'cowplot', 'bslib', 'thematic', \
-                          'ggrepel', 'shinydashboard', 'shinyBS', 'shinycssloaders', 'RJSONIO', 'waiter', 'remotes'))"
-RUN R -e "BiocManager::install('DESeq2')"
+ARG VERSION=0.6.0
+
+## install system dependencies
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+       libxml2-dev \
+       wget \
+       python3 \
+       libcurl4-openssl-dev \
+       libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+## install R dependencies
+RUN R -q -e "install.packages(c('markdown', 'shinyjs', 'curl', 'colorDF', 'lubridate', 'plotly', 'DT', 'cowplot', 'bslib', 'thematic', \
+                            'ggrepel', 'shinydashboard', 'shinyBS', 'shinycssloaders', 'RJSONIO', 'waiter', 'remotes'))"
+RUN R -q -e "BiocManager::install('DESeq2', ask = FALSE, update = FALSE)"
 
 EXPOSE 8080
 
-#copy the current folder into the path of the app
-COPY . /usr/local/src/app
+## change ARG VERSION on command line to enforce reinstalling seapiper deps
+## tmod currently tracks master upstream.
+ARG TMOD_REF=d583238f3559482b02cf34b9304a19b090006aca
+ARG RSEASNAP_REF=66f4f705dbee586a5de197322a401652c43d0598
+ARG BIOSHMODS_REF=59566df2f0604ec9bbe1eeb5d63803468f408ffc
+ARG SEAPIPER_REF=8202a01121529ac4680e066a94f6e9c3a64db83d
+ARG GGHALVES_REF=e5c3c79e79f13a00795a2a7774794252d1980d86
+RUN R -q -e "message('Installing pinned app deps for VERSION=${VERSION}'); \
+             remotes::install_github('erocoar/gghalves@${GGHALVES_REF}', upgrade='never'); \
+             remotes::install_github('january3/tmod@${TMOD_REF}', upgrade='never'); \
+             remotes::install_github('bihealth/Rseasnap@${RSEASNAP_REF}', upgrade='never'); \
+             remotes::install_github('bihealth/bioshmods@${BIOSHMODS_REF}', upgrade='never'); \
+             remotes::install_github('bihealth/seaPiper@${SEAPIPER_REF}', upgrade='never'); \
+             .pkgs <- c('tmod', 'Rseasnap', 'bioshmods', 'seaPiper'); \
+             .ok <- vapply(.pkgs, function(.p) requireNamespace(.p, quietly = TRUE), logical(1)); \
+             if (!all(.ok)) stop(sprintf('Missing required package(s): %s', paste(.pkgs[!.ok], collapse = ', ')))"
 
-#set working directory to the app
+RUN useradd --create-home --uid 10001 appuser \
+    && mkdir -p /usr/local/src/app \
+    && chown -R appuser:appuser /usr/local/src/app
+
+# copy the current folder into the path of the app
+COPY --chown=appuser:appuser . /usr/local/src/app
+
+# set working directory to the app
 WORKDIR /usr/local/src/app
 
-#RUN R -e "install.packages('Rseasnap_0.2.10.tar.gz')"
-#RUN R -e "install.packages('bioshmods_0.0.0.9000.tar.gz')"
-#RUN R -e "install.packages('seaPiper_0.0.0.9000.tar.gz')"
+USER appuser
 
-## change ARG VERSION on command line to enforce reinstalling the seapiper et co
-## docker build --build-arg VERSION=0.6.0 ...
-ARG VERSION=0.6.0
-RUN R -e "remotes::install_github( 'january3/tmod', upgrade='never');remotes::install_github( 'bihealth/Rseasnap', upgrade='never');remotes::install_github('bihealth/bioshmods', upgrade='never');remotes::install_github('bihealth/seaPiper', upgrade='never')"
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+  CMD wget -qO /dev/null http://127.0.0.1:8080/ || exit 1
 
 #set the unix commands to run the app
 CMD ["/usr/local/bin/Rscript", "app.R" ]
