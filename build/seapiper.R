@@ -92,15 +92,18 @@ stopifnot(length(datasets) > 0)
 
 names(datasets) <- sapply(datasets, function(.) .[["name"]])
 datasets <- lapply(datasets, function(.) {
-  format <- .[["format"]]
-  if(is.null(format) || format == "") {
+  if(!"format" %in% names(.) || is.null(.[["format"]]) || .[["format"]] == "") {
     format <- "rseasnap"
+  } else {
+    format <- .[["format"]]
   }
+
   format <- tolower(trimws(format))
   stopifnot(format %in% c("rseasnap", "custom"))
   .[["format"]] <- format
   .
 })
+
 for(i in datasets) {
   info("Dataset: %s (format=%s)", i[["name"]], i[["format"]])
 }
