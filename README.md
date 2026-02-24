@@ -58,7 +58,7 @@ Required:
 - `IRODS_PATH`: landing-zone path on SODAR/irods
 - `DAVRODS_SERVER`: anonymous davrods host
 - `IRODS_TOKEN`: read ticket/token
-- `DATASETS_JSON`: JSON array describing one or more datasets
+- `datasets`: JSON array describing one or more datasets
 
 Optional:
 
@@ -66,7 +66,7 @@ Optional:
 - `IMAGE`: docker image to run (default: `ghcr.io/bihealth/seapiper:0.6.0`)
 - `HOST_PORT`: local published port (default: `8080`)
 
-`DATASETS_JSON` format example:
+`datasets` format example:
 
 ```json
 [
@@ -78,9 +78,6 @@ Optional:
 ]
 ```
 
-Note: the container currently expects the variable name `datasets`
-(lower-case). `docker_run.sh` maps `DATASETS_JSON` to that runtime variable.
-
 ## KIOSC deployment checklist
 
 1. Push the image tag to GHCR (example: `0.6.0`).
@@ -89,7 +86,7 @@ Note: the container currently expects the variable name `datasets`
    - Tag: `0.6.0`
    - Container port: `8080`
 3. Set environment values:
-   - `datasets` (JSON array, same structure as `DATASETS_JSON`)
+   - `datasets` (JSON array, same structure as `datasets` above)
    - `IRODS_PATH`
    - `DAVRODS_SERVER`
    - `TITLE` (optional)
