@@ -43,7 +43,7 @@ These are passed as Docker build args and default to pinned refs
 
 ## Run image locally
 
-1. Copy `env.example` to `.env` and fill in your values.
+1. Copy `env.example` to `env` and fill in your values.
 2. Run:
 
 ```bash
