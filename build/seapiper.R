@@ -8,6 +8,8 @@ library(shinyBS)
 options(spinner.type=6)
 options(spinner.color="#47336F")
 
+# Log a formatted message to stdout and the temporary HTML log file.
+# Keeps startup progress visible while data is being prepared.
 info <- function(...) {
   txt <- sprintf(...)
   message(txt)
@@ -15,6 +17,8 @@ info <- function(...) {
   cat(txt, file="logs/index.html", append=TRUE)
 }
 
+# Merge multiple seaPiperData objects into one combined object.
+# Ensures list-like sections are concatenated and class is preserved.
 merge_seapiper_data <- function(data_objects) {
   data_objects <- Filter(Negate(is.null), data_objects)
   stopifnot(length(data_objects) > 0)
@@ -23,6 +27,8 @@ merge_seapiper_data <- function(data_objects) {
     return(data_objects[[1]])
   }
 
+  # Concatenate named list sections across data objects.
+  # Stops when duplicate dataset IDs would collide in merged output.
   merge_named_sections <- function(values, section_name) {
     merged_values <- do.call(c, values)
     dataset_ids <- names(merged_values)
@@ -59,6 +65,8 @@ merge_seapiper_data <- function(data_objects) {
   merged
 }
 
+# Validate and normalize one dataset entry from the datasets JSON array.
+# Enforces required fields and allowed format values.
 validate_dataset_entry <- function(ds, index) {
   if(!is.list(ds)) {
     stop(sprintf("Dataset entry #%d must be a JSON object", index))
@@ -102,6 +110,8 @@ validate_dataset_entry <- function(ds, index) {
   ds
 }
 
+# Start the temporary HTTP server used to expose startup logs.
+# Waits for pid file creation and fails after a configurable timeout.
 start_temp_http_server <- function(timeout_sec=120L, poll_sec=2L) {
   timeout_sec <- as.integer(timeout_sec)
   poll_sec <- as.integer(poll_sec)
@@ -137,6 +147,8 @@ start_temp_http_server <- function(timeout_sec=120L, poll_sec=2L) {
   pid
 }
 
+# Stop the temporary HTTP server process if it is still running.
+# Tries TERM first, then escalates to KILL when needed.
 stop_temp_http_server <- function(pid) {
   if(is.null(pid) || is.na(pid)) {
     return(invisible(NULL))
@@ -156,6 +168,8 @@ stop_temp_http_server <- function(pid) {
   }
 }
 
+# Main startup flow: parse environment variables, fetch/extract datasets.
+# Launches seaPiper and keeps temporary server cleanup reliable.
 main <- function() {
   dir.create("logs/", showWarnings=FALSE)
   cat("<html><head><title>Please wait</title></head>

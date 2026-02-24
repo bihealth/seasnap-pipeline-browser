@@ -1,6 +1,6 @@
-env
-env.*
-!env.example
+settings
+settings.*
+!settings.example
 
 build/.RData
 build/.Rhistory

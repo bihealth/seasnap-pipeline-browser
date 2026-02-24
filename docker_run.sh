@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ -f "env" ]]; then
+if [[ -f "settings" ]]; then
   # shellcheck disable=SC1091
-  source "env"
+  source "settings"
 fi
 
-: "${IRODS_PATH:?Missing IRODS_PATH (set in env or environment)}"
-: "${DAVRODS_SERVER:?Missing DAVRODS_SERVER (set in env or environment)}"
-: "${IRODS_TOKEN:?Missing IRODS_TOKEN (set in env or environment)}"
-: "${datasets:?Missing datasets (set in env or environment)}"
+: "${IRODS_PATH:?Missing IRODS_PATH (set in settings or environment)}"
+: "${DAVRODS_SERVER:?Missing DAVRODS_SERVER (set in settings or environment)}"
+: "${IRODS_TOKEN:?Missing IRODS_TOKEN (set in settings or environment)}"
+: "${datasets:?Missing datasets (set in settings or environment)}"
 
 IMAGE="${IMAGE:-ghcr.io/bihealth/seapiper:0.6.0}"
 HOST_PORT="${HOST_PORT:-8080}"

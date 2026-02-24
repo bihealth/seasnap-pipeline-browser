@@ -14,7 +14,7 @@ Current image:
 - `build/`: Docker build context (`Dockerfile`, app entrypoint, helper scripts)
 - `build.sh`: local helper for image build
 - `docker_run.sh`: local helper for `docker run` with environment variables
-- `env.example`: template for local runtime configuration
+- `settings.example`: template for local runtime configuration
 
 ## Build image locally
 
@@ -43,7 +43,7 @@ These are passed as Docker build args and default to pinned refs
 
 ## Run image locally
 
-1. Copy `env.example` to `env` and fill in your values.
+1. Copy `settings.example` to `settings` and fill in your values.
 2. Run:
 
 ```bash
