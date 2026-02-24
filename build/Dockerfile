@@ -1,4 +1,4 @@
-## Build: docker build --build-arg VERSION=0.1.0 -t ghcr.io/bihealth/seapiper:0.1.0 build
+## Build: docker build --build-arg VERSION=0.6.0 -t ghcr.io/bihealth/seapiper:0.6.0 build
 ## Based on Bioconductor image, with R 4.1
 FROM bioconductor/bioconductor_docker:latest
 
@@ -21,8 +21,8 @@ WORKDIR /usr/local/src/app
 #RUN R -e "install.packages('seaPiper_0.0.0.9000.tar.gz')"
 
 ## change ARG VERSION on command line to enforce reinstalling the seapiper et co
-## docker build --build-arg VERSION=0.1.1 ...
-ARG VERSION=0.5.4
+## docker build --build-arg VERSION=0.6.0 ...
+ARG VERSION=0.6.0
 RUN R -e "remotes::install_github( 'january3/tmod', upgrade='never');remotes::install_github( 'bihealth/Rseasnap', upgrade='never');remotes::install_github('bihealth/bioshmods', upgrade='never');remotes::install_github('bihealth/seaPiper', upgrade='never')"
 
 #set the unix commands to run the app

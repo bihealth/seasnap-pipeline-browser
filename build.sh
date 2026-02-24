@@ -1,1 +1,10 @@
-docker build --build-arg VERSION=0.5.4.1 -t ghcr.io/bihealth/seapiper:0.5.4 build
+#!/usr/bin/env bash
+set -euo pipefail
+
+IMAGE="${IMAGE:-ghcr.io/bihealth/seapiper}"
+TAG="${TAG:-0.6.0}"
+
+docker build \
+  --build-arg VERSION="$TAG" \
+  -t "$IMAGE:$TAG" \
+  build

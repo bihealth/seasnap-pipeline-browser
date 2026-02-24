@@ -1,5 +1,9 @@
 # Developing apps for Kiosc / SODAR
 
+> Legacy note: this document is historical background from earlier
+> `pipeline-browser` iterations. For current build/run/deploy instructions for
+> the `seapiper` image (`0.6.0`), use `README.md`.
+
 To develop an app for visualisation of the data from SODAR via KIOSC, you
 need the following elements:
 
@@ -332,4 +336,3 @@ private data in the image, including SODAR links and (especially) tokens.
 
 We are done now. All that is left is to configure Kiosc – see the
 [README.md](README.md) file for that.
-

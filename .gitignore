@@ -1,0 +1,16 @@
+.env
+.env.*
+!env.example
+
+build/.RData
+build/.Rhistory
+
+logs/
+archive_*/
+
+*.tar.gz
+
+build_debug/
+build_old/
+test_run_env
+test_waiter.R
