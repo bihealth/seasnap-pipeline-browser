@@ -38,7 +38,8 @@ IMAGE=ghcr.io/bihealth/seapiper TAG=0.6.0 bash build.sh
 - `SEAPIPER_REF`
 - `GGHALVES_REF`
 
-These are passed as Docker build args and default to pinned commit SHAs.
+These are passed as Docker build args and default to pinned refs
+(commit SHAs/tags).
 
 ## Run image locally
 
