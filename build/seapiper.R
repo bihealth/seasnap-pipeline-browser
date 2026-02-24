@@ -59,122 +59,254 @@ merge_seapiper_data <- function(data_objects) {
   merged
 }
 
-dir.create("logs/")
-cat("<html><head><title>Please wait</title></head>
-     <body><h1>Please wait, initializing....</h1><pre>\n\n", file="logs/index.html")
+validate_dataset_entry <- function(ds, index) {
+  if(!is.list(ds)) {
+    stop(sprintf("Dataset entry #%d must be a JSON object", index))
+  }
 
-info("Starting temporary HTTP server")
-system("./weblog.sh", wait=FALSE)
+  required_fields <- c("name", "archive", "config")
+  missing_fields <- required_fields[vapply(required_fields, function(field) {
+    value <- ds[[field]]
+    !(is.character(value) && length(value) == 1 && nzchar(trimws(value)))
+  }, logical(1))]
 
-while(!file.exists("logs/webserver.pid")) {
-  info("waiting for the HTTP server to initialize")
-  Sys.sleep(5)
-}
+  if(length(missing_fields) > 0) {
+    stop(sprintf(
+      "Dataset entry #%d is missing required field(s): %s",
+      index,
+      paste(missing_fields, collapse=", ")
+    ))
+  }
 
+  ds[["name"]] <- trimws(ds[["name"]])
+  ds[["archive"]] <- trimws(ds[["archive"]])
+  ds[["config"]] <- trimws(ds[["config"]])
 
-pid <- read.table("logs/webserver.pid")[[1]]
-info("Temporary HTTP server running with PID %d", pid)
-
-title <- Sys.getenv("TITLE")
-if(title == "") {
-  title <- "Pipeline browser"
-}
-
-datasets <- Sys.getenv("datasets")
-stopifnot(datasets != "")
-
-## for whatever reason the JSON is broken
-datasets <- gsub("'", '"', datasets)
-datasets <- sprintf('{ "datasets": %s }', datasets)
-datasets <- fromJSON(datasets)[[1]]
-stopifnot(is.list(datasets))
-stopifnot(length(datasets) > 0)
-
-names(datasets) <- sapply(datasets, function(.) .[["name"]])
-datasets <- lapply(datasets, function(.) {
-  if(!"format" %in% names(.) || is.null(.[["format"]]) || .[["format"]] == "") {
+  format <- ds[["format"]]
+  if(is.null(format) || (is.character(format) && length(format) == 1 && trimws(format) == "")) {
     format <- "rseasnap"
-  } else {
-    format <- .[["format"]]
+  }
+  if(!(is.character(format) && length(format) == 1)) {
+    stop(sprintf("Dataset `%s`: `format` must be a string", ds[["name"]]))
   }
 
   format <- tolower(trimws(format))
-  stopifnot(format %in% c("rseasnap", "custom"))
-  .[["format"]] <- format
-  .
-})
-
-for(i in datasets) {
-  info("Dataset: %s (format=%s)", i[["name"]], i[["format"]])
+  if(!(format %in% c("rseasnap", "custom"))) {
+    stop(sprintf(
+      "Dataset `%s`: invalid `format` `%s` (allowed: rseasnap, custom)",
+      ds[["name"]],
+      format
+    ))
+  }
+  ds[["format"]] <- format
+  ds
 }
 
-irods_path     <- Sys.getenv("IRODS_PATH")
-irods_token    <- Sys.getenv("IRODS_TOKEN")
-davrods_server <- Sys.getenv("DAVRODS_SERVER")
-stopifnot(all(c(irods_path != "", irods_token != "", davrods_server != "")))
+start_temp_http_server <- function(timeout_sec=120L, poll_sec=2L) {
+  timeout_sec <- as.integer(timeout_sec)
+  poll_sec <- as.integer(poll_sec)
+  if(is.na(timeout_sec) || timeout_sec <= 0) {
+    stop("`timeout_sec` must be a positive integer")
+  }
+  if(is.na(poll_sec) || poll_sec <= 0) {
+    stop("`poll_sec` must be a positive integer")
+  }
 
-info("Downloading data")
-for(ds in datasets) {
-  info("Downloading data set %s", ds[["name"]])
-  .dsdir <- paste0("archive_", ds[["name"]])
-  info(sprintf("Creating directory '%s'", .dsdir))
-  dir.create(.dsdir)
-  
-  .url <- sprintf("https://anonymous:%s@%s%s/%s",
-                  irods_token,
-                  davrods_server,
-                  irods_path,
-                  ds[["archive"]])
-  info("Downloading tar file from\n
-    https://anonymous:%s@%s%s/%s",
-                  "XXXXX",
-                  davrods_server,
-                  irods_path,
-                  ds[["archive"]]
-                  )
-  .arch_file <- file.path(.dsdir, ds[["archive"]])
-  curl_download(.url, .arch_file, quiet=TRUE)
-  info("opening archive:\n      cd '%s' ; tar xzf '%s'", .dsdir, ds[["archive"]])
-  system(sprintf("cd '%s' ; tar xzf '%s'", .dsdir, ds[["archive"]]))
+  info("Starting temporary HTTP server")
+  status <- system("./weblog.sh", wait=FALSE)
+  if(status != 0) {
+    stop("Failed to start temporary HTTP server")
+  }
 
+  start_time <- Sys.time()
+  while(!file.exists("logs/webserver.pid")) {
+    elapsed <- as.numeric(difftime(Sys.time(), start_time, units="secs"))
+    if(elapsed >= timeout_sec) {
+      stop(sprintf("Timed out after %d seconds waiting for temporary HTTP server", timeout_sec))
+    }
+    info("waiting for the HTTP server to initialize")
+    Sys.sleep(poll_sec)
+  }
+
+  pid <- suppressWarnings(as.integer(read.table("logs/webserver.pid")[[1]][1]))
+  if(is.na(pid)) {
+    stop("Temporary HTTP server PID file is invalid")
+  }
+
+  info("Temporary HTTP server running with PID %d", pid)
+  pid
 }
 
-info("Creating seaPiper data objects")
-rseasnap_pips <- list()
-custom_data <- list()
-for(ds in datasets) {
-  .conf_file <- file.path(
-    paste0("archive_", ds[["name"]]),
-    ds[["config"]]
-  )
+stop_temp_http_server <- function(pid) {
+  if(is.null(pid) || is.na(pid)) {
+    return(invisible(NULL))
+  }
 
-  if(ds[["format"]] == "rseasnap") {
-    info(sprintf("Loading workflow config file %s", .conf_file))
-    rseasnap_pips[[ds[["name"]]]] <- load_de_pipeline(.conf_file)
-  } else {
-    info(sprintf("Loading custom data YAML file %s", .conf_file))
-    custom_data[[ds[["name"]]]] <- seapiperdata_from_yaml(.conf_file)
+  if(system(sprintf("kill -0 %d", pid), ignore.stdout=TRUE, ignore.stderr=TRUE) != 0) {
+    return(invisible(NULL))
+  }
+
+  info("Stopping temporary web server %d", pid)
+  system(sprintf("kill -TERM %d", pid), ignore.stdout=TRUE, ignore.stderr=TRUE)
+  Sys.sleep(1)
+
+  if(system(sprintf("kill -0 %d", pid), ignore.stdout=TRUE, ignore.stderr=TRUE) == 0) {
+    info("Temporary web server %d did not exit, sending SIGKILL", pid)
+    system(sprintf("kill -KILL %d", pid), ignore.stdout=TRUE, ignore.stderr=TRUE)
   }
 }
 
-data_parts <- list()
-if(length(rseasnap_pips) > 0) {
-  data_parts[[length(data_parts) + 1]] <- seapiperdata_from_rseasnap(rseasnap_pips)
-}
-if(length(custom_data) > 0) {
-  data_parts <- c(data_parts, custom_data)
-}
-data <- merge_seapiper_data(data_parts)
+main <- function() {
+  dir.create("logs/", showWarnings=FALSE)
+  cat("<html><head><title>Please wait</title></head>
+       <body><h1>Please wait, initializing....</h1><pre>\n\n", file="logs/index.html")
 
-info("Killing temporary web server %s", pid)
-system(sprintf("kill -9 %d", pid))
-Sys.sleep(3)
-message("Launching app")
-debug_panel <- Sys.getenv("DEBUG_PANEL")
-if(debug_panel == "") {
-  debug_panel <- FALSE
-} else {
-  debug_panel <- TRUE
+  pid <- NA_integer_
+  on.exit(stop_temp_http_server(pid), add=TRUE)
+  pid <- start_temp_http_server(timeout_sec=120L, poll_sec=2L)
+
+  title <- Sys.getenv("TITLE")
+  if(title == "") {
+    title <- "Pipeline browser"
+  }
+
+  datasets <- Sys.getenv("datasets")
+  if(datasets == "") {
+    stop("Missing required environment variable `datasets`")
+  }
+
+  ## for whatever reason the JSON is broken
+  datasets <- gsub("'", '"', datasets)
+  datasets <- sprintf('{ "datasets": %s }', datasets)
+  datasets <- tryCatch(
+    fromJSON(datasets)[[1]],
+    error=function(e) {
+      stop(sprintf("Failed to parse `datasets` JSON: %s", conditionMessage(e)))
+    }
+  )
+
+  if(!is.list(datasets) || length(datasets) == 0) {
+    stop("`datasets` must be a non-empty JSON array of dataset objects")
+  }
+
+  datasets <- lapply(seq_along(datasets), function(i) {
+    validate_dataset_entry(datasets[[i]], i)
+  })
+
+  dataset_names <- vapply(datasets, function(ds) ds[["name"]], character(1))
+  if(anyDuplicated(dataset_names)) {
+    duplicated_names <- unique(dataset_names[duplicated(dataset_names)])
+    stop(sprintf(
+      "Duplicate dataset names in `datasets`: %s",
+      paste(duplicated_names, collapse=", ")
+    ))
+  }
+  names(datasets) <- dataset_names
+
+  for(i in datasets) {
+    info("Dataset: %s (format=%s)", i[["name"]], i[["format"]])
+  }
+
+  irods_path <- Sys.getenv("IRODS_PATH")
+  irods_token <- Sys.getenv("IRODS_TOKEN")
+  davrods_server <- Sys.getenv("DAVRODS_SERVER")
+  missing_env <- c()
+  if(irods_path == "") { missing_env <- c(missing_env, "IRODS_PATH") }
+  if(irods_token == "") { missing_env <- c(missing_env, "IRODS_TOKEN") }
+  if(davrods_server == "") { missing_env <- c(missing_env, "DAVRODS_SERVER") }
+  if(length(missing_env) > 0) {
+    stop(sprintf(
+      "Missing required environment variable(s): %s",
+      paste(missing_env, collapse=", ")
+    ))
+  }
+
+  info("Downloading data")
+  for(ds in datasets) {
+    info("Downloading data set %s", ds[["name"]])
+    .dsdir <- paste0("archive_", ds[["name"]])
+    info(sprintf("Creating directory '%s'", .dsdir))
+    dir.create(.dsdir, showWarnings=FALSE)
+
+    .url <- sprintf("https://anonymous:%s@%s%s/%s",
+                    irods_token,
+                    davrods_server,
+                    irods_path,
+                    ds[["archive"]])
+    info("Downloading tar file from\n
+      https://anonymous:%s@%s%s/%s",
+                    "XXXXX",
+                    davrods_server,
+                    irods_path,
+                    ds[["archive"]])
+    .arch_file <- file.path(.dsdir, ds[["archive"]])
+    tryCatch(
+      curl_download(.url, .arch_file, quiet=TRUE),
+      error=function(e) {
+        stop(sprintf(
+          "Failed to download archive for dataset `%s`: %s",
+          ds[["name"]],
+          conditionMessage(e)
+        ))
+      }
+    )
+    info("opening archive:\n      cd '%s' ; tar xzf '%s'", .dsdir, ds[["archive"]])
+    status <- system(sprintf("cd '%s' ; tar xzf '%s'", .dsdir, ds[["archive"]]))
+    if(status != 0) {
+      stop(sprintf(
+        "Failed to extract archive `%s` for dataset `%s`",
+        ds[["archive"]],
+        ds[["name"]]
+      ))
+    }
+  }
+
+  info("Creating seaPiper data objects")
+  rseasnap_pips <- list()
+  custom_data <- list()
+  for(ds in datasets) {
+    .conf_file <- file.path(
+      paste0("archive_", ds[["name"]]),
+      ds[["config"]]
+    )
+    if(!file.exists(.conf_file)) {
+      stop(sprintf(
+        "Config file not found for dataset `%s`: %s",
+        ds[["name"]],
+        .conf_file
+      ))
+    }
+
+    if(ds[["format"]] == "rseasnap") {
+      info(sprintf("Loading workflow config file %s", .conf_file))
+      rseasnap_pips[[ds[["name"]]]] <- load_de_pipeline(.conf_file)
+    } else {
+      info(sprintf("Loading custom data YAML file %s", .conf_file))
+      custom_data[[ds[["name"]]]] <- seapiperdata_from_yaml(.conf_file)
+    }
+  }
+
+  data_parts <- list()
+  if(length(rseasnap_pips) > 0) {
+    data_parts[[length(data_parts) + 1]] <- seapiperdata_from_rseasnap(rseasnap_pips)
+  }
+  if(length(custom_data) > 0) {
+    data_parts <- c(data_parts, custom_data)
+  }
+  data <- merge_seapiper_data(data_parts)
+
+  stop_temp_http_server(pid)
+  pid <- NA_integer_
+
+  message("Launching app")
+  debug_panel <- Sys.getenv("DEBUG_PANEL")
+  if(debug_panel == "") {
+    debug_panel <- FALSE
+  } else {
+    debug_panel <- TRUE
+  }
+  app <- seapiper(data, title=title, debug_panel=debug_panel)
+  runApp(app, launch.browser = FALSE, port = 8080, host = "0.0.0.0") #runs shiny app in port 8080 localhost
 }
-app <- seapiper(data, title=title, debug_panel=debug_panel)
-runApp(app, launch.browser = FALSE, port = 8080, host = "0.0.0.0") #runs shiny app in port 8080 localhost
+
+main()
