@@ -28,12 +28,14 @@ ARG RSEASNAP_REF=66f4f705dbee586a5de197322a401652c43d0598
 ARG BIOSHMODS_REF=59566df2f0604ec9bbe1eeb5d63803468f408ffc
 ARG SEAPIPER_REF=v0.1.2
 ARG GGHALVES_REF=e5c3c79e79f13a00795a2a7774794252d1980d86
+ARG VCTRS_VERSION=0.6.5
 RUN R -q -e "message('Installing pinned app deps for VERSION=${VERSION}'); \
              remotes::install_github('erocoar/gghalves@${GGHALVES_REF}', upgrade='never'); \
              remotes::install_github('january3/tmod@${TMOD_REF}', upgrade='never'); \
              remotes::install_github('bihealth/Rseasnap@${RSEASNAP_REF}', upgrade='never'); \
              remotes::install_github('bihealth/bioshmods@${BIOSHMODS_REF}', upgrade='never'); \
              remotes::install_github('bihealth/seaPiper@${SEAPIPER_REF}', upgrade='never'); \
+             remotes::install_version('vctrs', version='${VCTRS_VERSION}', upgrade='never', repos='https://packagemanager.rstudio.com/all/__linux__/focal/latest'); \
              .pkgs <- c('tmod', 'Rseasnap', 'bioshmods', 'seaPiper'); \
              .ok <- vapply(.pkgs, function(.p) requireNamespace(.p, quietly = TRUE), logical(1)); \
              if (!all(.ok)) stop(sprintf('Missing required package(s): %s', paste(.pkgs[!.ok], collapse = ', ')))"

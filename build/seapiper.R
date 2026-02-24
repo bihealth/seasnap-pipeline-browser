@@ -69,7 +69,11 @@ merge_seapiper_data <- function(data_objects) {
 # Enforces required fields and allowed format values.
 validate_dataset_entry <- function(ds, index) {
   if(!is.list(ds)) {
-    stop(sprintf("Dataset entry #%d must be a JSON object", index))
+    if(is.atomic(ds) && !is.null(names(ds)) && length(ds) > 0) {
+      ds <- as.list(ds)
+    } else {
+      stop(sprintf("Dataset entry #%d must be a JSON object", index))
+    }
   }
 
   required_fields <- c("name", "archive", "config")
@@ -193,7 +197,7 @@ main <- function() {
   datasets <- gsub("'", '"', datasets)
   datasets <- sprintf('{ "datasets": %s }', datasets)
   datasets <- tryCatch(
-    fromJSON(datasets)[[1]],
+    fromJSON(datasets, simplify=FALSE)[["datasets"]],
     error=function(e) {
       stop(sprintf("Failed to parse `datasets` JSON: %s", conditionMessage(e)))
     }
