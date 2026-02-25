@@ -12,7 +12,8 @@ SEAPIPER_REF="${SEAPIPER_REF:-aab216da87e4203e5c6fea1f8a9534c8e00d266b}"
 GGHALVES_REF="${GGHALVES_REF:-e5c3c79e79f13a00795a2a7774794252d1980d86}"
 VCTRS_VERSION="${VCTRS_VERSION:-0.6.5}"
 
-docker build \
+docker buildx build \
+  --load \
   --build-arg VERSION="$TAG" \
   --build-arg BIOC_PKGS="$BIOC_PKGS" \
   --build-arg TMOD_REF="$TMOD_REF" \
