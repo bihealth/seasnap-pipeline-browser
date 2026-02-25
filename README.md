@@ -37,8 +37,6 @@ IMAGE=ghcr.io/bihealth/seapiper TAG=0.6.1 bash build.sh
 - `RSEASNAP_REF`
 - `BIOSHMODS_REF`
 - `SEAPIPER_REF`
-- `GGHALVES_REF`
-- `VCTRS_VERSION`
 
 These are passed as Docker build args and default to pinned refs
 (commit SHAs/tags).

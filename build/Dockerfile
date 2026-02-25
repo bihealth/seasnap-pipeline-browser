@@ -28,8 +28,13 @@ RUN R -q -e "pkgs <- strsplit('${BIOC_PKGS}', ',', fixed = TRUE)[[1]]; \
              if (length(pkgs) > 0) BiocManager::install(pkgs, ask = FALSE, update = FALSE)"
 
 # Layer: install CRAN dependencies used by the app.
+# gghalves is installed from CRAN archive for compatibility with this R base.
 RUN R -q -e "install.packages(c('markdown', 'shinyjs', 'curl', 'colorDF', 'lubridate', 'plotly', 'DT', 'cowplot', 'bslib', 'thematic', \
-                            'ggrepel', 'shinydashboard', 'shinyBS', 'shinycssloaders', 'RJSONIO', 'waiter', 'remotes'))"
+                            'vctrs', 'ggrepel', 'shinydashboard', 'shinyBS', 'shinycssloaders', 'RJSONIO', 'waiter', 'remotes')); \
+             remotes::install_version('gghalves', version='0.1.4', upgrade='never', repos='https://cran.r-project.org'); \
+             .pkgs <- c('gghalves', 'vctrs'); \
+             .ok <- vapply(.pkgs, function(.p) requireNamespace(.p, quietly = TRUE), logical(1)); \
+             if (!all(.ok)) stop(sprintf('Missing required CRAN package(s): %s', paste(.pkgs[!.ok], collapse = ', ')))"
 
 # Image metadata: exposed app port. No filesystem layer.
 EXPOSE 8080
@@ -40,19 +45,15 @@ EXPOSE 8080
 # tmod currently tracks master upstream.
 ARG TMOD_REF=d583238f3559482b02cf34b9304a19b090006aca
 ARG RSEASNAP_REF=66f4f705dbee586a5de197322a401652c43d0598
-ARG BIOSHMODS_REF=605712e12e7a1ab4baa49943025369a2d4539072
+ARG BIOSHMODS_REF=v0.1.0
 ARG SEAPIPER_REF=aab216da87e4203e5c6fea1f8a9534c8e00d266b
-ARG GGHALVES_REF=e5c3c79e79f13a00795a2a7774794252d1980d86
-ARG VCTRS_VERSION=0.6.5
 
 # Layer: install pinned GitHub/app dependencies and verify required packages exist.
 RUN R -q -e "message('Installing pinned app deps for VERSION=${VERSION}'); \
-             remotes::install_github('erocoar/gghalves@${GGHALVES_REF}', upgrade='never'); \
              remotes::install_github('january3/tmod@${TMOD_REF}', upgrade='never'); \
              remotes::install_github('bihealth/Rseasnap@${RSEASNAP_REF}', upgrade='never'); \
              remotes::install_github('bihealth/bioshmods@${BIOSHMODS_REF}', upgrade='never'); \
              remotes::install_github('bihealth/seaPiper@${SEAPIPER_REF}', upgrade='never'); \
-             remotes::install_version('vctrs', version='${VCTRS_VERSION}', upgrade='never', repos='https://packagemanager.rstudio.com/all/__linux__/focal/latest'); \
              .pkgs <- c('tmod', 'Rseasnap', 'bioshmods', 'seaPiper'); \
              .ok <- vapply(.pkgs, function(.p) requireNamespace(.p, quietly = TRUE), logical(1)); \
              if (!all(.ok)) stop(sprintf('Missing required package(s): %s', paste(.pkgs[!.ok], collapse = ', ')))"
