@@ -1,8 +1,8 @@
-## Build: docker build --build-arg VERSION=0.6.0 -t ghcr.io/bihealth/seapiper:0.6.0 build
+## Build: docker build --build-arg VERSION=0.6.1 -t ghcr.io/bihealth/seapiper:0.6.1 build
 ## Pinned Bioconductor image digest for reproducibility.
 FROM bioconductor/bioconductor_docker@sha256:d274974ec781ce48642f8cb804b0da66b475f221d3587d7cd4d29542fbb29404
 
-ARG VERSION=0.6.0
+ARG VERSION=0.6.1
 
 ## install system dependencies
 RUN apt-get update \
@@ -25,8 +25,8 @@ EXPOSE 8080
 ## tmod currently tracks master upstream.
 ARG TMOD_REF=d583238f3559482b02cf34b9304a19b090006aca
 ARG RSEASNAP_REF=66f4f705dbee586a5de197322a401652c43d0598
-ARG BIOSHMODS_REF=00d76c423320bee984e11833d8fecb097e6dfe37
-ARG SEAPIPER_REF=57345344f2aa937c3d9cb995a4d5ee4f95a5f487
+ARG BIOSHMODS_REF=0a3d94758a4ff817c6da9c5259c9992fed8acf6d
+ARG SEAPIPER_REF=aab216da87e4203e5c6fea1f8a9534c8e00d266b
 ARG GGHALVES_REF=e5c3c79e79f13a00795a2a7774794252d1980d86
 ARG VCTRS_VERSION=0.6.5
 RUN R -q -e "message('Installing pinned app deps for VERSION=${VERSION}'); \

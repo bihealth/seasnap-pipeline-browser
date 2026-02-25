@@ -6,7 +6,7 @@ seaPiper-based pipeline browser in KIOSC.
 Current image:
 
 - Repository: `ghcr.io/bihealth/seapiper`
-- Version/tag: `0.6.0`
+- Version/tag: `0.6.1`
 - Exposed container port: `8080`
 
 ## Repository layout
@@ -18,7 +18,7 @@ Current image:
 
 ## Build image locally
 
-Use defaults (`ghcr.io/bihealth/seapiper:0.6.0`):
+Use defaults (`ghcr.io/bihealth/seapiper:0.6.1`):
 
 ```bash
 bash build.sh
@@ -27,7 +27,7 @@ bash build.sh
 Override image or tag:
 
 ```bash
-IMAGE=ghcr.io/bihealth/seapiper TAG=0.6.0 bash build.sh
+IMAGE=ghcr.io/bihealth/seapiper TAG=0.6.1 bash build.sh
 ```
 
 `build.sh` also accepts pinned dependency refs:
@@ -65,7 +65,7 @@ Required:
 Optional:
 
 - `TITLE`: app title (default: `SeaPiper`)
-- `IMAGE`: docker image to run (default: `ghcr.io/bihealth/seapiper:0.6.0`)
+- `IMAGE`: docker image to run (default: `ghcr.io/bihealth/seapiper:0.6.1`)
 - `HOST_PORT`: local published port (default: `8080`)
 
 `datasets` format example:
@@ -101,10 +101,10 @@ must stay unique. Duplicate IDs will stop app startup with an explicit error.
 
 ## KIOSC deployment checklist
 
-1. Push the image tag to GHCR (example: `0.6.0`).
+1. Push the image tag to GHCR (example: `0.6.1`).
 2. In KIOSC, create/update the container:
    - Repository: `ghcr.io/bihealth/seapiper`
-   - Tag: `0.6.0`
+   - Tag: `0.6.1`
    - Container port: `8080`
 3. Set environment values:
    - `datasets` (JSON array, same structure as `datasets` above)
