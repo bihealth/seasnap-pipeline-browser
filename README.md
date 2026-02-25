@@ -32,6 +32,7 @@ IMAGE=ghcr.io/bihealth/seapiper TAG=0.6.1 bash build.sh
 
 `build.sh` also accepts pinned dependency refs:
 
+- `BIOC_PKGS` (default: `DESeq2`)
 - `TMOD_REF`
 - `RSEASNAP_REF`
 - `BIOSHMODS_REF`

@@ -1,10 +1,12 @@
 ## Build: docker build --build-arg VERSION=0.6.1 -t ghcr.io/bihealth/seapiper:0.6.1 build
-## Pinned Bioconductor image digest for reproducibility.
+## Base image pinned by digest for reproducibility.
 FROM bioconductor/bioconductor_docker@sha256:d274974ec781ce48642f8cb804b0da66b475f221d3587d7cd4d29542fbb29404
 
+# Build arg used to force reinstall of pinned app dependencies when VERSION changes.
+# ARG is metadata only and does not create a filesystem layer.
 ARG VERSION=0.6.1
 
-## install system dependencies
+# Layer: install OS-level system dependencies needed by R packages and healthcheck.
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
        libxml2-dev \
@@ -14,21 +16,36 @@ RUN apt-get update \
        libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-## install R dependencies
+# Build arg controlling heavy Bioconductor package installs.
+# Keep this independent from app refs so the next RUN can stay cached.
+# ARG is metadata only and does not create a filesystem layer.
+ARG BIOC_PKGS=DESeq2
+
+# Layer: install heavy Bioconductor dependencies (for example DESeq2).
+# This layer should remain reusable when later CRAN or GitHub package refs change.
+RUN R -q -e "pkgs <- strsplit('${BIOC_PKGS}', ',', fixed = TRUE)[[1]]; \
+             pkgs <- trimws(pkgs[nzchar(pkgs)]); \
+             if (length(pkgs) > 0) BiocManager::install(pkgs, ask = FALSE, update = FALSE)"
+
+# Layer: install CRAN dependencies used by the app.
 RUN R -q -e "install.packages(c('markdown', 'shinyjs', 'curl', 'colorDF', 'lubridate', 'plotly', 'DT', 'cowplot', 'bslib', 'thematic', \
                             'ggrepel', 'shinydashboard', 'shinyBS', 'shinycssloaders', 'RJSONIO', 'waiter', 'remotes'))"
-RUN R -q -e "BiocManager::install('DESeq2', ask = FALSE, update = FALSE)"
 
+# Image metadata: exposed app port. No filesystem layer.
 EXPOSE 8080
 
-## change ARG VERSION on command line to enforce reinstalling seapiper deps
-## tmod currently tracks master upstream.
+# Build args for pinned app dependency refs (commit SHAs/tags).
+# ARG is metadata only and does not create a filesystem layer.
+# Change VERSION to force this app-dependency RUN to rebuild.
+# tmod currently tracks master upstream.
 ARG TMOD_REF=d583238f3559482b02cf34b9304a19b090006aca
 ARG RSEASNAP_REF=66f4f705dbee586a5de197322a401652c43d0598
 ARG BIOSHMODS_REF=605712e12e7a1ab4baa49943025369a2d4539072
 ARG SEAPIPER_REF=aab216da87e4203e5c6fea1f8a9534c8e00d266b
 ARG GGHALVES_REF=e5c3c79e79f13a00795a2a7774794252d1980d86
 ARG VCTRS_VERSION=0.6.5
+
+# Layer: install pinned GitHub/app dependencies and verify required packages exist.
 RUN R -q -e "message('Installing pinned app deps for VERSION=${VERSION}'); \
              remotes::install_github('erocoar/gghalves@${GGHALVES_REF}', upgrade='never'); \
              remotes::install_github('january3/tmod@${TMOD_REF}', upgrade='never'); \
@@ -40,20 +57,24 @@ RUN R -q -e "message('Installing pinned app deps for VERSION=${VERSION}'); \
              .ok <- vapply(.pkgs, function(.p) requireNamespace(.p, quietly = TRUE), logical(1)); \
              if (!all(.ok)) stop(sprintf('Missing required package(s): %s', paste(.pkgs[!.ok], collapse = ', ')))"
 
+# Layer: create non-root runtime user and writable app directory.
 RUN useradd --create-home --uid 10001 appuser \
     && mkdir -p /usr/local/src/app \
     && chown -R appuser:appuser /usr/local/src/app
 
-# copy the current folder into the path of the app
+# Layer: copy source code into the image.
+# Keeping COPY late prevents source changes from invalidating heavy dependency layers above.
 COPY --chown=appuser:appuser . /usr/local/src/app
 
-# set working directory to the app
+# Image metadata/runtime defaults below.
+# WORKDIR/USER/HEALTHCHECK/CMD configure runtime behavior.
 WORKDIR /usr/local/src/app
 
 USER appuser
 
+# Runtime liveness probe: container is healthy only if the app responds on port 8080.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
   CMD wget -qO /dev/null http://127.0.0.1:8080/ || exit 1
 
-#set the unix commands to run the app
+# Default container command.
 CMD ["/usr/local/bin/Rscript", "app.R" ]
