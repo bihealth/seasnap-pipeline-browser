@@ -17,7 +17,13 @@ RUN apt-get update \
 ## install R dependencies
 RUN R -q -e "install.packages(c('markdown', 'shinyjs', 'curl', 'colorDF', 'lubridate', 'plotly', 'DT', 'cowplot', 'bslib', 'thematic', \
                             'ggrepel', 'shinydashboard', 'shinyBS', 'shinycssloaders', 'RJSONIO', 'waiter', 'remotes'))"
-RUN R -q -e "BiocManager::install('DESeq2', ask = FALSE, update = FALSE)"
+RUN R -q -e "options(timeout = 1200); \
+             for (.attempt in 1:3) { \
+               try(BiocManager::install('DESeq2', ask = FALSE, update = FALSE), silent = TRUE); \
+               if (requireNamespace('DESeq2', quietly = TRUE)) break; \
+               message(sprintf('DESeq2 install attempt %d failed; retrying...', .attempt)); \
+             }; \
+             if (!requireNamespace('DESeq2', quietly = TRUE)) stop('DESeq2 installation failed after retries')"
 
 EXPOSE 8080
 
