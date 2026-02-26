@@ -30,9 +30,13 @@ RUN R -q -e "pkgs <- strsplit('${BIOC_PKGS}', ',', fixed = TRUE)[[1]]; \
 # Layer: install CRAN dependencies used by the app.
 # gghalves is installed from CRAN archive for compatibility with this R base.
 RUN R -q -e "install.packages(c('markdown', 'shinyjs', 'curl', 'colorDF', 'lubridate', 'plotly', 'DT', 'cowplot', 'bslib', 'thematic', \
-                            'vctrs', 'ggrepel', 'shinydashboard', 'shinyBS', 'shinycssloaders', 'RJSONIO', 'waiter', 'remotes')); \
+                            'shinydashboard', 'shinyBS', 'shinycssloaders', 'RJSONIO', 'waiter', 'remotes')); \
+             remotes::install_version('ggrepel', version='0.9.6', upgrade='never', repos='https://cran.r-project.org'); \
+             remotes::install_version('vctrs', version='0.6.5', upgrade='never', repos='https://cran.r-project.org'); \
              remotes::install_version('gghalves', version='0.1.4', upgrade='never', repos='https://cran.r-project.org'); \
-             .pkgs <- c('gghalves', 'vctrs'); \
+             .pkgs <- c('gghalves', 'vctrs', \
+             'markdown', 'shinyjs', 'curl', 'colorDF', 'lubridate', 'plotly', 'DT', 'cowplot', 'bslib', 'thematic', \
+                            'ggrepel', 'shinydashboard', 'shinyBS', 'shinycssloaders', 'RJSONIO', 'waiter', 'remotes') ; \
              .ok <- vapply(.pkgs, function(.p) requireNamespace(.p, quietly = TRUE), logical(1)); \
              if (!all(.ok)) stop(sprintf('Missing required CRAN package(s): %s', paste(.pkgs[!.ok], collapse = ', ')))"
 
