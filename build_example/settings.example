@@ -1,0 +1,11 @@
+# Required
+IRODS_PATH=/sodarZone/projects/<project-id>/landing_zones/<user>/<lz>
+DAVRODS_SERVER=davrods-anonymous.sodar.cubi.bihealth.org
+IRODS_TOKEN=replace-me
+IRODS_FILE=example.tar.gz
+
+# Optional
+IMAGE=ghcr.io/bihealth/seapiper-example
+TAG=0.1.0
+HOST_PORT=8080
+TITLE="SODAR Shiny Blueprint"

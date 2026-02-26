@@ -1,0 +1,9 @@
+.RData
+.Rhistory
+logs
+data
+settings.example
+settings
+run.sh
+build.sh
+extracted
