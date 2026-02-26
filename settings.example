@@ -1,6 +1,6 @@
 # Required
-IRODS_PATH=/sodarZone/projects/<project-id>/landing_zones/<user>/<lz>
-DAVRODS_SERVER=davrods-anonymous.sodar.cubi.bihealth.org
+IRODS_PATH=/sodarZone/projects/<project-id>/sample_data/<study-id>/MiscFiles/seapiper
+DAVRODS_SERVER=sodar.bihealth.org
 IRODS_TOKEN=replace-me
 
 # JSON array; keep it on one line for shell compatibility
@@ -8,5 +8,5 @@ datasets=[{"name":"Example data set","archive":"DE_pipeline.tar.gz","config":"DE
 
 # Optional
 TITLE=SeaPiper example project
-IMAGE=ghcr.io/bihealth/seapiper:0.6.1
+IMAGE=ghcr.io/bihealth/seapiper:0.6.2
 HOST_PORT=8080

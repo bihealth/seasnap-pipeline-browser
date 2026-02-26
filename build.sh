@@ -2,13 +2,13 @@
 set -euo pipefail
 
 IMAGE="${IMAGE:-ghcr.io/bihealth/seapiper}"
-TAG="${TAG:-0.6.1}"
-BIOC_PKGS="${BIOC_PKGS:-DESeq2}"
+TAG="${TAG:-0.6.2}"
+BIOC_PKGS="${BIOC_PKGS:-DESeq2,ComplexHeatmap}"
 # tmod currently tracks master upstream.
 TMOD_REF="${TMOD_REF:-d583238f3559482b02cf34b9304a19b090006aca}"
 RSEASNAP_REF="${RSEASNAP_REF:-66f4f705dbee586a5de197322a401652c43d0598}"
-BIOSHMODS_REF="${BIOSHMODS_REF:-v0.1.0}"
-SEAPIPER_REF="${SEAPIPER_REF:-aab216da87e4203e5c6fea1f8a9534c8e00d266b}"
+BIOSHMODS_REF="${BIOSHMODS_REF:-4ce7076cf53f94c05aae8819cfbef8ea38867929}"
+SEAPIPER_REF="${SEAPIPER_REF:-v0.1.3}"
 
 docker buildx build \
   --load \
