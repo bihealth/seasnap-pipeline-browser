@@ -3,5 +3,5 @@ set -euo pipefail
 
 mkdir -p logs
 cd logs
-python3 -m http.server 8080 &
+/usr/local/bin/Rscript ../weblog.R &
 echo $! > webserver.pid

@@ -11,7 +11,6 @@ RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
        libxml2-dev \
        wget \
-       python3 \
        libcurl4-openssl-dev \
        libssl-dev \
     && rm -rf /var/lib/apt/lists/*

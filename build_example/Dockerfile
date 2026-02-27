@@ -4,7 +4,6 @@ FROM rocker/r-ver:4.4.1
 # Layer: install minimal OS tools used at runtime.
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-       python3 \
        wget \
        ca-certificates \
        tar \
