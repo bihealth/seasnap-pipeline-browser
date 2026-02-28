@@ -182,6 +182,8 @@ main <- function() {
   pid <- NA_integer_
   on.exit(stop_temp_http_server(pid), add=TRUE)
   pid <- start_temp_http_server(timeout_sec=120L, poll_sec=2L)
+  info("Package versions: tmod=%s; Rseasnap=%s; bioshmods=%s; seaPiper=%s", as.character(utils::packageVersion("tmod")), as.character(utils::packageVersion("Rseasnap")), as.character(utils::packageVersion("bioshmods")), as.character(utils::packageVersion("seaPiper")))
+  info("Image: %s:%s", Sys.getenv("SEAPIPER_IMAGE_NAME", unset="unknown-image"), Sys.getenv("SEAPIPER_IMAGE_VERSION", unset="unknown-version"))
 
   title <- Sys.getenv("TITLE")
   if(title == "") {

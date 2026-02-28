@@ -1,10 +1,10 @@
-## Build: docker build --build-arg VERSION=0.6.2 -t ghcr.io/bihealth/seapiper:0.6.2 build
+## Build: docker build --build-arg VERSION=0.6.3 -t ghcr.io/bihealth/seapiper:0.6.3 build
 ## Base image pinned by digest for reproducibility.
 FROM bioconductor/bioconductor_docker@sha256:d274974ec781ce48642f8cb804b0da66b475f221d3587d7cd4d29542fbb29404
 
 # Build arg used to force reinstall of pinned app dependencies when VERSION changes.
 # ARG is metadata only and does not create a filesystem layer.
-ARG VERSION=0.6.2
+ARG VERSION=0.6.3
 
 # Layer: install OS-level system dependencies needed by R packages and healthcheck.
 RUN apt-get update \
@@ -48,8 +48,8 @@ EXPOSE 8080
 # tmod currently tracks master upstream.
 ARG TMOD_REF=d583238f3559482b02cf34b9304a19b090006aca
 ARG RSEASNAP_REF=66f4f705dbee586a5de197322a401652c43d0598
-ARG BIOSHMODS_REF=4ce7076cf53f94c05aae8819cfbef8ea38867929
-ARG SEAPIPER_REF=v0.1.3
+ARG BIOSHMODS_REF=v0.1.2
+ARG SEAPIPER_REF=v0.1.4
 
 # Layer: install pinned GitHub/app dependencies and verify required packages exist.
 RUN R -q -e "message('Installing pinned app deps for VERSION=${VERSION}'); \
@@ -75,6 +75,15 @@ COPY --chown=appuser:appuser . /usr/local/src/app
 WORKDIR /usr/local/src/app
 
 USER appuser
+
+# Build arg for image name used in runtime startup logging.
+# ARG is metadata only and does not create a filesystem layer.
+ARG IMAGE_NAME=ghcr.io/bihealth/seapiper
+
+# Runtime image metadata exposed to app logs.
+# ENV sets image metadata (no filesystem content is added).
+ENV SEAPIPER_IMAGE_NAME=${IMAGE_NAME}
+ENV SEAPIPER_IMAGE_VERSION=${VERSION}
 
 # Runtime liveness probe: container is healthy only if the app responds on port 8080.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
