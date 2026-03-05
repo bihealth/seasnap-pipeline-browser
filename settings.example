@@ -8,5 +8,5 @@ datasets=[{"name":"Example data set","archive":"DE_pipeline.tar.gz","config":"DE
 
 # Optional
 TITLE=SeaPiper example project
-IMAGE=ghcr.io/bihealth/seapiper:0.6.3
+IMAGE=ghcr.io/bihealth/seapiper:0.6.4
 HOST_PORT=8080

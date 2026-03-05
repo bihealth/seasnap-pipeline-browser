@@ -308,7 +308,7 @@ main <- function() {
 
   data_parts <- list()
   if(length(rseasnap_pips) > 0) {
-    data_parts[[length(data_parts) + 1]] <- seapiperdata_from_rseasnap(rseasnap_pips)
+    data_parts[[length(data_parts) + 1]] <- seapiperdata_from_rseasnap(rseasnap_pips, sample_id = "label")
   }
   if(length(custom_data) > 0) {
     data_parts <- c(data_parts, custom_data)

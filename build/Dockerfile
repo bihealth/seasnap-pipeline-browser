@@ -1,10 +1,6 @@
-## Build: docker build --build-arg VERSION=0.6.3 -t ghcr.io/bihealth/seapiper:0.6.3 build
+## Build: docker build --build-arg VERSION=0.6.4 -t ghcr.io/bihealth/seapiper:0.6.4 build
 ## Base image pinned by digest for reproducibility.
 FROM bioconductor/bioconductor_docker@sha256:d274974ec781ce48642f8cb804b0da66b475f221d3587d7cd4d29542fbb29404
-
-# Build arg used to force reinstall of pinned app dependencies when VERSION changes.
-# ARG is metadata only and does not create a filesystem layer.
-ARG VERSION=0.6.3
 
 # Layer: install OS-level system dependencies needed by R packages and healthcheck.
 RUN apt-get update \
@@ -24,7 +20,16 @@ ARG BIOC_PKGS=DESeq2,ComplexHeatmap
 # This layer should remain reusable when later CRAN or GitHub package refs change.
 RUN R -q -e "pkgs <- strsplit('${BIOC_PKGS}', ',', fixed = TRUE)[[1]]; \
              pkgs <- trimws(pkgs[nzchar(pkgs)]); \
-             if (length(pkgs) > 0) BiocManager::install(pkgs, ask = FALSE, update = FALSE)"
+             if (length(pkgs) > 0) { \
+               for (.attempt in seq_len(5)) { \
+                 BiocManager::install(pkgs, ask = FALSE, update = FALSE); \
+                 .ok <- vapply(pkgs, function(.p) requireNamespace(.p, quietly = TRUE), logical(1)); \
+                 if (all(.ok)) break; \
+                 message(sprintf('Bioconductor install attempt %d incomplete: %s', .attempt, paste(pkgs[!.ok], collapse = ', '))); \
+                 if (.attempt == 5) stop(sprintf('Failed to install Bioconductor package(s): %s', paste(pkgs[!.ok], collapse = ', '))); \
+                 Sys.sleep(5); \
+               } \
+             }"
 
 # Layer: install CRAN dependencies used by the app.
 # gghalves is installed from CRAN archive for compatibility with this R base.
@@ -42,14 +47,19 @@ RUN R -q -e "install.packages(c('markdown', 'shinyjs', 'curl', 'colorDF', 'lubri
 # Image metadata: exposed app port. No filesystem layer.
 EXPOSE 8080
 
+# Build arg used to force reinstall of pinned app dependencies when VERSION changes.
+# Declared here so VERSION updates do not invalidate heavy OS/Bioconductor/CRAN layers.
+# ARG is metadata only and does not create a filesystem layer.
+ARG VERSION=0.6.4
+
 # Build args for pinned app dependency refs (commit SHAs/tags).
 # ARG is metadata only and does not create a filesystem layer.
 # Change VERSION to force this app-dependency RUN to rebuild.
 # tmod currently tracks master upstream.
 ARG TMOD_REF=d583238f3559482b02cf34b9304a19b090006aca
 ARG RSEASNAP_REF=66f4f705dbee586a5de197322a401652c43d0598
-ARG BIOSHMODS_REF=v0.1.2
-ARG SEAPIPER_REF=v0.1.4
+ARG BIOSHMODS_REF=v0.1.3
+ARG SEAPIPER_REF=v0.1.5
 
 # Layer: install pinned GitHub/app dependencies and verify required packages exist.
 RUN R -q -e "message('Installing pinned app deps for VERSION=${VERSION}'); \
