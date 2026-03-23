@@ -270,15 +270,18 @@ main <- function() {
         ))
       }
     )
-    info("opening archive:\n      cd '%s' ; tar xzf '%s'", .dsdir, ds[["archive"]])
-    status <- system(sprintf("cd '%s' ; tar xzf '%s'", .dsdir, ds[["archive"]]))
-    if(status != 0) {
-      stop(sprintf(
-        "Failed to extract archive `%s` for dataset `%s`",
-        ds[["archive"]],
-        ds[["name"]]
-      ))
-    }
+    info("Extracting archive `%s` into `%s`", .arch_file, .dsdir)
+    tryCatch(
+      utils::untar(.arch_file, exdir=.dsdir),
+      error=function(e) {
+        stop(sprintf(
+          "Failed to extract archive `%s` for dataset `%s`: %s",
+          ds[["archive"]],
+          ds[["name"]],
+          conditionMessage(e)
+        ))
+      }
+    )
   }
 
   info("Creating seaPiper data objects")
