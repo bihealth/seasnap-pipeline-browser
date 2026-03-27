@@ -11,7 +11,7 @@ fi
 : "${IRODS_TOKEN:?Missing IRODS_TOKEN (set in settings or environment)}"
 : "${datasets:?Missing datasets (set in settings or environment)}"
 
-IMAGE="${IMAGE:-ghcr.io/bihealth/seapiper:0.6.5}"
+IMAGE="${IMAGE:-ghcr.io/bihealth/seapiper:0.6.6}"
 HOST_PORT="${HOST_PORT:-8080}"
 TITLE="${TITLE:-SeaPiper}"
 

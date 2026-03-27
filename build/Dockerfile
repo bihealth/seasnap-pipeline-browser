@@ -1,4 +1,4 @@
-## Build: docker build --build-arg VERSION=0.6.5 -t ghcr.io/bihealth/seapiper:0.6.5 build
+## Build: docker build --build-arg VERSION=0.6.6 -t ghcr.io/bihealth/seapiper:0.6.6 build
 ## Base image pinned by digest for reproducibility.
 FROM bioconductor/bioconductor_docker@sha256:d274974ec781ce48642f8cb804b0da66b475f221d3587d7cd4d29542fbb29404
 
@@ -50,7 +50,7 @@ EXPOSE 8080
 # Build arg used to force reinstall of pinned app dependencies when VERSION changes.
 # Declared here so VERSION updates do not invalidate heavy OS/Bioconductor/CRAN layers.
 # ARG is metadata only and does not create a filesystem layer.
-ARG VERSION=0.6.5
+ARG VERSION=0.6.6
 
 # Build args for pinned app dependency refs (commit SHAs/tags).
 # ARG is metadata only and does not create a filesystem layer.
@@ -58,8 +58,8 @@ ARG VERSION=0.6.5
 # tmod currently tracks master upstream.
 ARG TMOD_REF=d583238f3559482b02cf34b9304a19b090006aca
 ARG RSEASNAP_REF=66f4f705dbee586a5de197322a401652c43d0598
-ARG BIOSHMODS_REF=v0.1.4
-ARG SEAPIPER_REF=v0.1.5
+ARG BIOSHMODS_REF=da2d4b00bbe99e1196b532c71d9abb03398e1df2
+ARG SEAPIPER_REF=52e1c9c825af257233053f00f67fb8bfb7ff9c11
 
 # Layer: install pinned GitHub/app dependencies and verify required packages exist.
 RUN R -q -e "message('Installing pinned app deps for VERSION=${VERSION}'); \

@@ -91,8 +91,8 @@ validate_dataset_entry <- function(ds, index) {
   }
 
   ds[["name"]] <- trimws(ds[["name"]])
-  ds[["archive"]] <- trimws(ds[["archive"]])
-  ds[["config"]] <- trimws(ds[["config"]])
+  ds[["archive"]] <- validate_dataset_path(trimws(ds[["archive"]]), "archive", ds[["name"]])
+  ds[["config"]] <- validate_dataset_path(trimws(ds[["config"]]), "config", ds[["name"]])
 
   format <- ds[["format"]]
   if(is.null(format) || (is.character(format) && length(format) == 1 && trimws(format) == "")) {
@@ -112,6 +112,69 @@ validate_dataset_entry <- function(ds, index) {
   }
   ds[["format"]] <- format
   ds
+}
+
+# Validate one dataset-supplied file path before it is used on disk.
+# Only allows clean relative slash-separated paths inside the dataset archive.
+validate_dataset_path <- function(path, field_name, dataset_name) {
+  if(grepl("\\\\", path)) {
+    stop(sprintf(
+      "Dataset `%s`: `%s` must use forward slashes only",
+      dataset_name,
+      field_name
+    ))
+  }
+
+  if(grepl("^(/|~)", path) || grepl("^[A-Za-z]:/", path)) {
+    stop(sprintf(
+      "Dataset `%s`: `%s` must be a relative path",
+      dataset_name,
+      field_name
+    ))
+  }
+
+  path_parts <- strsplit(path, "/", fixed=TRUE)[[1]]
+  if(any(!nzchar(path_parts)) || any(path_parts %in% c(".", ".."))) {
+    stop(sprintf(
+      "Dataset `%s`: `%s` must not contain empty, `.` or `..` path segments",
+      dataset_name,
+      field_name
+    ))
+  }
+
+  path
+}
+
+# Parse the datasets environment variable as JSON with a compatibility fallback.
+# Accepts valid JSON first, then retries single-quoted pseudo-JSON when needed.
+parse_datasets_json <- function(datasets_txt) {
+  try_direct <- tryCatch(
+    fromJSON(datasets_txt, simplify=FALSE),
+    error=function(e) e
+  )
+  if(!inherits(try_direct, "error")) {
+    return(try_direct)
+  }
+
+  normalized_txt <- gsub(
+    "(?<!\\\\)'([^'\\\\]*(?:\\\\.[^'\\\\]*)*)'",
+    '"\\1"',
+    datasets_txt,
+    perl=TRUE
+  )
+  try_fallback <- tryCatch(
+    fromJSON(normalized_txt, simplify=FALSE),
+    error=function(e) e
+  )
+  if(!inherits(try_fallback, "error")) {
+    return(try_fallback)
+  }
+
+  stop(sprintf(
+    "Failed to parse `datasets` JSON. Direct parse error: %s. Fallback parse error: %s",
+    conditionMessage(try_direct),
+    conditionMessage(try_fallback)
+  ))
 }
 
 # Start the temporary HTTP server used to expose startup logs.
@@ -195,15 +258,7 @@ main <- function() {
     stop("Missing required environment variable `datasets`")
   }
 
-  ## for whatever reason the JSON is broken
-  datasets <- gsub("'", '"', datasets)
-  datasets <- sprintf('{ "datasets": %s }', datasets)
-  datasets <- tryCatch(
-    fromJSON(datasets, simplify=FALSE)[["datasets"]],
-    error=function(e) {
-      stop(sprintf("Failed to parse `datasets` JSON: %s", conditionMessage(e)))
-    }
-  )
+  datasets <- parse_datasets_json(datasets)
 
   if(!is.list(datasets) || length(datasets) == 0) {
     stop("`datasets` must be a non-empty JSON array of dataset objects")
