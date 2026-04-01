@@ -111,6 +111,24 @@ validate_dataset_entry <- function(ds, index) {
     ))
   }
   ds[["format"]] <- format
+
+  normalize_optional_field <- function(field_name) {
+    value <- ds[[field_name]]
+    if(is.null(value)) {
+      return(NULL)
+    }
+    if(!(is.character(value) && length(value) == 1)) {
+      stop(sprintf("Dataset `%s`: `%s` must be a string", ds[["name"]], field_name))
+    }
+    value <- trimws(value)
+    if(!nzchar(value)) {
+      return(NULL)
+    }
+    value
+  }
+
+  ds[["sample_id"]] <- normalize_optional_field("sample_id")
+  ds[["primary_id"]] <- normalize_optional_field("primary_id")
   ds
 }
 
@@ -145,15 +163,67 @@ validate_dataset_path <- function(path, field_name, dataset_name) {
   path
 }
 
+# Summarize a parsed JSON value for startup diagnostics.
+# Keeps logs compact while still showing container/entry shape.
+describe_json_value <- function(x) {
+  value_names <- names(x)
+  if(is.null(value_names)) {
+    value_names <- "<none>"
+  } else {
+    value_names <- paste(value_names, collapse=",")
+  }
+
+  sprintf(
+    "typeof=%s class=%s length=%d names=%s",
+    typeof(x),
+    paste(class(x), collapse="/"),
+    length(x),
+    value_names
+  )
+}
+
+# Detect RJSONIO's broken "successful" parse of single-quoted pseudo-JSON.
+# Such inputs can yield entries with named NULL fields instead of real strings.
+direct_parse_looks_broken <- function(x) {
+  required_fields <- c("name", "archive", "config")
+
+  is_broken_entry <- function(entry) {
+    is.list(entry) &&
+      all(required_fields %in% names(entry)) &&
+      all(vapply(required_fields, function(field) is.null(entry[[field]]), logical(1)))
+  }
+
+  is.list(x) &&
+    length(x) > 0 &&
+    all(vapply(x, is_broken_entry, logical(1)))
+}
+
 # Parse the datasets environment variable as JSON with a compatibility fallback.
 # Accepts valid JSON first, then retries single-quoted pseudo-JSON when needed.
 parse_datasets_json <- function(datasets_txt) {
+  info("Raw `datasets` env var: %s", datasets_txt)
   try_direct <- tryCatch(
     fromJSON(datasets_txt, simplify=FALSE),
     error=function(e) e
   )
   if(!inherits(try_direct, "error")) {
-    return(try_direct)
+    info("Direct `datasets` parse succeeded: %s", describe_json_value(try_direct))
+    if(!direct_parse_looks_broken(try_direct)) {
+      return(try_direct)
+    }
+
+    warning(
+      paste(
+        "Direct `datasets` parse produced NULL required fields.",
+        "This looks like non-standard single-quoted pseudo-JSON.",
+        "Falling back to quote normalization."
+      ),
+      call.=FALSE,
+      immediate.=TRUE
+    )
+    info("Direct `datasets` parse looks broken; retrying with fallback normalization")
+  } else {
+    info("Direct `datasets` parse failed: %s", conditionMessage(try_direct))
   }
 
   normalized_txt <- gsub(
@@ -162,13 +232,16 @@ parse_datasets_json <- function(datasets_txt) {
     datasets_txt,
     perl=TRUE
   )
+  info("Fallback-normalized `datasets`: %s", normalized_txt)
   try_fallback <- tryCatch(
     fromJSON(normalized_txt, simplify=FALSE),
     error=function(e) e
   )
   if(!inherits(try_fallback, "error")) {
+    info("Fallback `datasets` parse succeeded: %s", describe_json_value(try_fallback))
     return(try_fallback)
   }
+  info("Fallback `datasets` parse failed: %s", conditionMessage(try_fallback))
 
   stop(sprintf(
     "Failed to parse `datasets` JSON. Direct parse error: %s. Fallback parse error: %s",
@@ -259,6 +332,10 @@ main <- function() {
   }
 
   datasets <- parse_datasets_json(datasets)
+  info("Parsed `datasets` top-level shape: %s", describe_json_value(datasets))
+  if(is.list(datasets) && length(datasets) > 0) {
+    info("Parsed `datasets[[1]]` shape: %s", describe_json_value(datasets[[1]]))
+  }
 
   if(!is.list(datasets) || length(datasets) == 0) {
     stop("`datasets` must be a non-empty JSON array of dataset objects")
@@ -360,7 +437,14 @@ main <- function() {
       rseasnap_pips[[ds[["name"]]]] <- load_de_pipeline(.conf_file)
     } else {
       info(sprintf("Loading custom data YAML file %s", .conf_file))
-      custom_data[[ds[["name"]]]] <- seapiperdata_from_yaml(.conf_file)
+      yaml_args <- list(yaml_file=.conf_file)
+      if(!is.null(ds[["sample_id"]])) {
+        yaml_args[["sample_id"]] <- ds[["sample_id"]]
+      }
+      if(!is.null(ds[["primary_id"]])) {
+        yaml_args[["primary_id"]] <- ds[["primary_id"]]
+      }
+      custom_data[[ds[["name"]]]] <- do.call(seapiperdata_from_yaml, yaml_args)
     }
   }
 
