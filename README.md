@@ -6,7 +6,7 @@ seaPiper-based pipeline browser in KIOSC.
 Current image:
 
 - Repository: `ghcr.io/bihealth/seapiper`
-- Version/tag: `0.6.7`
+- Version/tag: `0.6.8`
 - Exposed container port: `8080`
 
 ## Repository layout
@@ -18,7 +18,7 @@ Current image:
 
 ## Build image locally
 
-Use defaults (`ghcr.io/bihealth/seapiper:0.6.7`):
+Use defaults (`ghcr.io/bihealth/seapiper:0.6.8`):
 
 ```bash
 bash build.sh
@@ -27,7 +27,7 @@ bash build.sh
 Override image or tag:
 
 ```bash
-IMAGE=ghcr.io/bihealth/seapiper TAG=0.6.7 bash build.sh
+IMAGE=ghcr.io/bihealth/seapiper TAG=0.6.8 bash build.sh
 ```
 
 `build.sh` also accepts pinned dependency refs:
@@ -64,26 +64,30 @@ Required:
 Optional:
 
 - `TITLE`: app title (default: `SeaPiper`)
-- `IMAGE`: docker image to run (default: `ghcr.io/bihealth/seapiper:0.6.7`)
+- `IMAGE`: docker image to run (default: `ghcr.io/bihealth/seapiper:0.6.8`)
 - `HOST_PORT`: local published port (default: `8080`)
 
-`datasets` format example:
+Configuration `json` format example:
 
 ```json
-[
-  {
-    "name": "Example data set",
-    "archive": "DE_pipeline.tar.gz",
-    "config": "DE_config.yaml",
-    "format": "rseasnap"
-  },
-  {
-    "name": "Example custom data set",
-    "archive": "custom_input.tar.gz",
-    "config": "seapiper_data.yaml",
-    "format": "custom"
-  }
-]
+{
+    "DAVRODS_SERVER": "sodar.bihealth.org",
+    "IRODS_PATH": "/sodarZone/...",
+    "IRODS_TOKEN": "1235abcd",
+    "datasets": [
+      {
+        "name": "Example data set",
+        "archive": "DE_pipeline.tar.gz",
+        "config": "DE_config.yaml"
+      },
+      {
+        "name": "Example custom data set",
+        "archive": "custom_input.tar.gz",
+        "config": "seapiper_data.yaml",
+        "format": "custom"
+      }
+   ]
+}
 ```
 
 `datasets` entry fields:
@@ -98,22 +102,19 @@ Optional:
 When mixing multiple dataset entries, dataset IDs inside merged seaPiper data
 must stay unique. Duplicate IDs will stop app startup with an explicit error.
 
+
+
 ## KIOSC deployment checklist
 
-1. Push the image tag to GHCR (example: `0.6.7`).
+1. Push the image tag to GHCR (example: `0.6.8`).
 2. In KIOSC, create/update the container:
    - Repository: `ghcr.io/bihealth/seapiper`
-   - Tag: `0.6.7`
+   - Tag: `0.6.8`
    - Container port: `8080`
+3. In SODAR, create a ticket
 3. Set environment values:
    - `datasets` (JSON array, same structure as `datasets` above)
    - `IRODS_PATH`
    - `DAVRODS_SERVER`
    - `TITLE` (optional)
 4. Store `IRODS_TOKEN` as an environment secret key.
-
-## Legacy notes
-
-Older exploratory notes are in
-`creating_shiny_apps_with_kiosc.md`. They are kept for historical context but
-are not the authoritative operational guide for the current container.
